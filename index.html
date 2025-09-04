@@ -1,0 +1,257 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Calculator</title>
+  <style>
+    :root{
+      --bg: #0f172a;         /* slate-900 */
+      --card: #111827;       /* gray-900 */
+      --text: #e5e7eb;       /* gray-200 */
+      --muted: #9ca3af;      /* gray-400 */
+      --accent: #4f46e5;     /* indigo-600 */
+      --accent-2: #22c55e;   /* green-500 */
+      --danger: #ef4444;     /* red-500 */
+      --shadow: rgba(0,0,0,.35);
+    }* { box-sizing: border-box; }
+html, body { height: 100%; }
+body{
+  margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  background: radial-gradient(1200px 600px at 10% -10%, #1f2937, transparent),
+              radial-gradient(1000px 500px at 110% 10%, #1e3a8a55, transparent),
+              var(--bg);
+  color: var(--text);
+  display: grid; place-items: center;
+  padding: 24px;
+}
+
+.wrap{
+  width: 100%; max-width: 420px;
+}
+
+.calc{
+  background: linear-gradient(180deg, #0b1220, #0a1222);
+  border: 1px solid #1f2937;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px var(--shadow), inset 0 1px 0 #33415580;
+  overflow: hidden;
+}
+
+.display{
+  padding: 20px 18px 10px;
+  min-height: 120px;
+  display: flex; flex-direction: column; gap: 8px;
+  background: linear-gradient(180deg, #0b1220 0%, #0d1b2a 100%);
+}
+
+.input{
+  width: 100%;
+  font-size: 32px;
+  line-height: 1.2;
+  border: none; outline: none;
+  background: transparent;
+  color: var(--text);
+  caret-color: var(--accent);
+}
+
+.preview{
+  font-size: 14px; color: var(--muted);
+  min-height: 18px;
+}
+
+.keys{
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  padding: 14px;
+  background: #0b1220;
+}
+
+button{
+  appearance: none; -webkit-appearance: none; border: none; outline: none;
+  background: #121a2b;
+  color: var(--text);
+  border-radius: 14px;
+  padding: 16px 12px;
+  font-size: 18px; font-weight: 600;
+  box-shadow: 0 8px 16px var(--shadow), inset 0 1px 0 #33415580;
+  transition: transform .05s ease, filter .15s ease, background .15s ease;
+  cursor: pointer;
+}
+button:active{ transform: translateY(1px) scale(0.998); }
+button.op{ color: var(--accent-2); }
+button.equals{ background: linear-gradient(180deg, #3b82f6, #2563eb); }
+button.equals:active{ filter: brightness(0.95); }
+button.danger{ color: #fff; background: linear-gradient(180deg, #ef4444, #dc2626); }
+button.muted{ color: var(--muted); }
+
+.span-2{ grid-column: span 2; }
+
+.footer{
+  text-align: center; color: var(--muted); font-size: 12px; padding: 10px 0 0 0;
+}
+
+@media (max-width: 380px){
+  .input{ font-size: 26px; }
+  button{ padding: 14px 10px; font-size: 16px; }
+}
+
+  </style>
+</head>
+<body>
+  <div class="wrap" role="application" aria-label="Calculator">
+    <div class="calc">
+      <div class="display">
+        <input id="display" class="input" aria-label="Calculation input" autocomplete="off" spellcheck="false" />
+        <div id="preview" class="preview" aria-live="polite"></div>
+      </div>
+      <div class="keys" id="keys">
+        <button class="danger" data-action="clear" aria-label="Clear (Esc)">C</button>
+        <button class="muted" data-action="delete" aria-label="Delete (Backspace)">⌫</button>
+        <button class="muted" data-value="%" aria-label="Percent">%</button>
+        <button class="op" data-value="/" aria-label="Divide">÷</button><button data-value="7">7</button>
+    <button data-value="8">8</button>
+    <button data-value="9">9</button>
+    <button class="op" data-value="*" aria-label="Multiply">×</button>
+
+    <button data-value="4">4</button>
+    <button data-value="5">5</button>
+    <button data-value="6">6</button>
+    <button class="op" data-value="-" aria-label="Subtract">−</button>
+
+    <button data-value="1">1</button>
+    <button data-value="2">2</button>
+    <button data-value="3">3</button>
+    <button class="op" data-value="+" aria-label="Add">+</button>
+
+    <button data-value="0" class="span-2">0</button>
+    <button data-value=".">.</button>
+    <button class="equals" data-action="equals" aria-label="Equals (Enter)">=</button>
+
+    <button class="muted span-2" data-value="(" aria-label="Left parenthesis">(</button>
+    <button class="muted span-2" data-value=")" aria-label="Right parenthesis">)</button>
+  </div>
+</div>
+<div class="footer">Keyboard: 0–9, + - * / ( ) .  |  Enter =  |  Esc clear  |  Backspace delete</div>
+
+  </div>  <script>
+    const inputEl = document.getElementById('display');
+    const previewEl = document.getElementById('preview');
+    const keysEl = document.getElementById('keys');
+
+    // Restore last expression
+    inputEl.value = localStorage.getItem('calc_expr') || '';
+    updatePreview();
+
+    // Focus input on load
+    setTimeout(() => inputEl.focus(), 50);
+
+    // Button clicks
+    keysEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      if(!btn) return;
+      const val = btn.dataset.value;
+      const action = btn.dataset.action;
+      if(action === 'clear') return clearAll();
+      if(action === 'delete') return backspace();
+      if(action === 'equals') return evaluate();
+      if(val) return append(val);
+    });
+
+    // Keyboard support
+    window.addEventListener('keydown', (e) => {
+      const { key } = e;
+      if (key === 'Enter' || key === '=') { e.preventDefault(); evaluate(); return; }
+      if (key === 'Escape') { e.preventDefault(); clearAll(); return; }
+      if (key === 'Backspace') { backspace(); return; }
+
+      const allowed = '0123456789+-*/().%';
+      if (allowed.includes(key)) {
+        append(key);
+      }
+    });
+
+    // Direct typing updates preview too
+    inputEl.addEventListener('input', updatePreview);
+
+    function append(char){
+      // Replace user-friendly symbols if pasted
+      if(char === '×') char = '*';
+      if(char === '÷') char = '/';
+      inputEl.value += char;
+      persist();
+      updatePreview();
+    }
+
+    function clearAll(){
+      inputEl.value = '';
+      persist();
+      updatePreview();
+    }
+
+    function backspace(){
+      inputEl.value = inputEl.value.slice(0, -1);
+      persist();
+      updatePreview();
+    }
+
+    function evaluate(){
+      const expr = sanitize(inputEl.value);
+      if(expr === null){ showError('Invalid input'); return; }
+      try{
+        const result = safeEval(expr);
+        inputEl.value = String(result);
+        persist();
+        updatePreview();
+      }catch(err){
+        showError('Error');
+      }
+    }
+
+    function updatePreview(){
+      const expr = sanitize(inputEl.value);
+      if (expr === null || expr.trim() === '') { previewEl.textContent = ''; return; }
+      try{
+        const result = safeEval(expr);
+        if (Number.isFinite(result)) {
+          previewEl.textContent = '= ' + result;
+        } else {
+          previewEl.textContent = '';
+        }
+      }catch{ previewEl.textContent = ''; }
+    }
+
+    function showError(msg){
+      previewEl.textContent = msg;
+    }
+
+    function persist(){
+      localStorage.setItem('calc_expr', inputEl.value);
+    }
+
+    // --- Utilities ---
+    function sanitize(raw){
+      if(typeof raw !== 'string') return null;
+      // Map friendly symbols to JS operators
+      let expr = raw.replace(/×/g, '*').replace(/÷/g, '/');
+      // Convert percentage: e.g., 50% -> (50/100)
+      expr = expr.replace(/(\d+(?:\.\d+)?)%/g, '($1/100)');
+      // Allow only safe characters
+      if(!/^[-+/().%\d\s]$/.test(raw)) return null;
+      // Prevent multiple leading operators like ++, ** (but allow unary minus/plus)
+      expr = expr.replace(/\s+/g,'');
+      return expr;
+    }
+
+    function safeEval(expr){
+      // Evaluate using Function in an isolated scope
+      // We already sanitized allowed characters; this is still just a calculator, not general eval
+      // Also handle consecutive operators errors naturally via try/catch
+      // eslint-disable-next-line no-new-func
+      const fn = new Function('return (' + expr + ')');
+      const out = fn();
+      // Round long floating errors to 10 decimals
+      return typeof out === 'number' ? Number(parseFloat(out.toFixed(10))) : out;
+    }
+  </script></body>
+</html>
